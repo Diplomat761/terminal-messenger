@@ -11,11 +11,14 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: 15px;
 }
 
 .terminal-container {
-    width: 800px;
-    height: 500px;
+    width: 100%;
+    max-width: 800px;
+    height: 100%;
+    max-height: 500px;
     background-color: #000000;
     border-radius: 8px;
     overflow: hidden;
@@ -37,6 +40,7 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+    z-index: 1;
 }
 
 .button {
@@ -97,6 +101,7 @@ body {
     display: flex;
     align-items: center;
     width: 100%;
+    flex-wrap: wrap;
 }
 
 .prompt {
@@ -113,6 +118,7 @@ body {
     color: #ffffff;
     font-size: 14px;
     caret-color: #ffffff;
+    min-width: 50px;
 }
 
 /* Scrollbar styles */
@@ -131,4 +137,64 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
     background: #666;
+}
+
+/* Адаптивная верстка */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    .terminal-container {
+        max-height: 100%;
+    }
+    
+    .terminal-title {
+        font-size: 10px;
+    }
+    
+    .prompt {
+        font-size: 12px;
+    }
+    
+    .message-input {
+        font-size: 12px;
+    }
+    
+    .message {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .terminal-buttons {
+        gap: 5px;
+    }
+    
+    .button {
+        width: 10px;
+        height: 10px;
+    }
+    
+    .terminal-title {
+        font-size: 9px;
+    }
+    
+    .prompt {
+        font-size: 11px;
+    }
+    
+    .message {
+        font-size: 11px;
+    }
+    
+    .input-line {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .message-input {
+        width: 100%;
+        margin-top: 5px;
+    }
 } 

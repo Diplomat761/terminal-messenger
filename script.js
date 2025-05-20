@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const chatMessages = document.getElementById('chatMessages');
     const messageInput = document.getElementById('messageInput');
+    const prompt = document.querySelector('.prompt');
     
     // Добавляем начальное системное сообщение
     addSystemMessage('Добро пожаловать в Terminal Messenger. Начните общение...');
@@ -16,16 +17,43 @@ document.addEventListener('DOMContentLoaded', () => {
             // Очищаем поле ввода
             messageInput.value = '';
             
-            // Обрабатываем командыы
+            // Обрабатываем команды
             handleCommand(userInput);
         }
     });
+    
+    // Адаптивность для мобильных устройств
+    function adjustPromptForMobile() {
+        if (window.innerWidth <= 480) {
+            const shortPrompt = "$ ";
+            if (prompt.textContent !== shortPrompt) {
+                prompt.dataset.fullPrompt = prompt.textContent;
+                prompt.textContent = shortPrompt;
+            }
+        } else {
+            if (prompt.dataset.fullPrompt) {
+                prompt.textContent = prompt.dataset.fullPrompt;
+            }
+        }
+    }
+    
+    // Вызываем при загрузке
+    adjustPromptForMobile();
+    
+    // Слушаем изменение размера окна
+    window.addEventListener('resize', adjustPromptForMobile);
     
     // Функция добавления сообщения пользователя
     function addUserMessage(text) {
         const messageElement = document.createElement('div');
         messageElement.classList.add('message');
-        messageElement.innerHTML = `<span class="prompt">alexeypereverzev@MacBook-Air-Alexey ~ % </span>${text}`;
+        
+        if (window.innerWidth <= 480) {
+            messageElement.innerHTML = `<span class="prompt">$ </span>${text}`;
+        } else {
+            messageElement.innerHTML = `<span class="prompt">alexeypereverzev@MacBook-Air-Alexey ~ % </span>${text}`;
+        }
+        
         chatMessages.appendChild(messageElement);
         scrollToBottom();
     }
