@@ -10,12 +10,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveSettingsBtn = document.getElementById('saveSettingsBtn');
     const cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
     
-    // Конфигурация API (загружаем из localStorage, если есть)
-    let OPENAI_API_KEY = localStorage.getItem('openai_api_key') || '';
-    let USE_AI = localStorage.getItem('use_ai') === 'true' || false;
+    // Конфигурация API (загружаем из localStorage или используем предустановленный ключ)
+    let API_KEY = localStorage.getItem('deepseek_api_key') || 'sk-689a8bb7c9ed4019a17c389743e5a0ac';
+    let USE_AI = localStorage.getItem('use_ai') === 'true' || true; // По умолчанию включен
+    let AI_MODEL = localStorage.getItem('ai_model') || 'deepseek'; // По умолчанию deepseek
     
     // Устанавливаем начальные значения в форме настроек
-    apiKeyInput.value = OPENAI_API_KEY;
+    apiKeyInput.value = API_KEY;
     useAiSwitch.checked = USE_AI;
     
     // Обработка кнопки настроек
@@ -25,24 +26,24 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Сохранение настроек
     saveSettingsBtn.addEventListener('click', () => {
-        OPENAI_API_KEY = apiKeyInput.value.trim();
+        API_KEY = apiKeyInput.value.trim();
         USE_AI = useAiSwitch.checked;
         
         // Сохраняем в localStorage
-        localStorage.setItem('openai_api_key', OPENAI_API_KEY);
+        localStorage.setItem('deepseek_api_key', API_KEY);
         localStorage.setItem('use_ai', USE_AI.toString());
         
         // Закрываем модальное окно
         settingsModal.style.display = 'none';
         
         // Показываем сообщение об успешном сохранении настроек
-        addSystemMessage('Настройки сохранены. ' + (USE_AI ? 'Нейросеть включена.' : 'Нейросеть отключена.'));
+        addSystemMessage('Настройки сохранены. ' + (USE_AI ? 'DeepSeek включен.' : 'DeepSeek отключен.'));
     });
     
     // Отмена настроек
     cancelSettingsBtn.addEventListener('click', () => {
         // Восстанавливаем предыдущие значения
-        apiKeyInput.value = OPENAI_API_KEY;
+        apiKeyInput.value = API_KEY;
         useAiSwitch.checked = USE_AI;
         
         // Закрываем модальное окно
@@ -58,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Добавляем начальное системное сообщение
     addSystemMessage('Добро пожаловать в Terminal Messenger. Начните общение...');
+    addSystemMessage('DeepSeek AI уже включен и готов к использованию!');
     
     // Обработчик ввода сообщений
     messageInput.addEventListener('keydown', (e) => {
@@ -164,9 +166,9 @@ document.addEventListener('DOMContentLoaded', () => {
         scrollToBottom();
     }
     
-    // Функция для вызова OpenAI API
+    // Функция для вызова DeepSeek API
     async function generateAIResponse(prompt) {
-        if (!OPENAI_API_KEY || !USE_AI) {
+        if (!API_KEY || !USE_AI) {
             // Если ключ API не задан или AI отключен, используем стандартные ответы
             return null;
         }
@@ -179,14 +181,17 @@ document.addEventListener('DOMContentLoaded', () => {
         scrollToBottom();
         
         try {
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            // URL для DeepSeek API
+            const apiUrl = 'https://api.deepseek.com/v1/chat/completions';
+            
+            const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${OPENAI_API_KEY}`
+                    'Authorization': `Bearer ${API_KEY}`
                 },
                 body: JSON.stringify({
-                    model: 'gpt-3.5-turbo',
+                    model: 'deepseek-chat', // Используйте правильное имя модели для DeepSeek
                     messages: [
                         {
                             role: 'system',
@@ -213,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             return null;
         } catch (error) {
-            console.error('Ошибка при запросе к API:', error);
+            console.error('Ошибка при запросе к API DeepSeek:', error);
             
             // Удаляем индикатор загрузки
             chatMessages.removeChild(loadingElement);
@@ -248,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
             addSystemMessage('Окно терминала очищено');
         } 
         else if (command === 'help') {
-            addResponseMessage('Доступные команды:\n- clear: очистить экран\n- time: показать текущее время\n- date: показать текущую дату\n- echo [текст]: вывести текст\n- ls: список файлов\n- settings: настройки нейросети\n- exit: выход');
+            addResponseMessage('Доступные команды:\n- clear: очистить экран\n- time: показать текущее время\n- date: показать текущую дату\n- echo [текст]: вывести текст\n- ls: список файлов\n- settings: настройки DeepSeek AI\n- about: информация о DeepSeek\n- exit: выход');
         }
         else if (command === 'time') {
             const now = new Date();
@@ -275,43 +280,72 @@ document.addEventListener('DOMContentLoaded', () => {
             // Открываем настройки при вводе команды settings
             settingsModal.style.display = 'flex';
         }
+        else if (command === 'about') {
+            // Информация о DeepSeek и как получить ключ
+            addResponseMessage('DeepSeek AI - это платформа искусственного интеллекта, которая предоставляет мощные языковые модели.\n\nЧтобы получить API ключ DeepSeek:\n1. Зарегистрируйтесь на сайте https://deepseek.com\n2. Перейдите в личный кабинет\n3. Найдите раздел API или Developer\n4. Создайте новый API ключ\n\nПосле получения ключа добавьте его в настройках (команда "settings").');
+        }
         else {
             // Используем AI для генерации ответов на сообщения
             if (!isCommand) {
-                // Пытаемся получить ответ от AI
-                const aiResponse = await generateAIResponse(originalCommand);
-                
-                if (aiResponse) {
-                    // Если получили ответ от AI, используем его
-                    addResponseMessage(aiResponse);
-                } else {
-                    // Если ответа от AI нет, используем стандартные ответы
-                    // Если это русский текст, отвечаем на русском
-                    if (containsCyrillic) {
-                        const russianResponses = [
-                            'Понятно!',
-                            'Интересно.',
-                            'Хорошо.',
-                            'Согласен.',
-                            'Действительно.',
-                            'Ясно.',
-                            'Принято!'
-                        ];
-                        const randomIndex = Math.floor(Math.random() * russianResponses.length);
-                        addResponseMessage(russianResponses[randomIndex]);
+                try {
+                    // Пытаемся получить ответ от AI, если она включена
+                    const aiResponse = USE_AI ? await generateAIResponse(originalCommand) : null;
+                    
+                    if (aiResponse) {
+                        // Если получили ответ от AI, используем его
+                        addResponseMessage(aiResponse);
+                    } else {
+                        // Если AI отключен или нет ответа от API
+                        if (USE_AI && API_KEY) {
+                            // Если AI включен, но ответа нет, сообщаем об ошибке
+                            addSystemMessage('Не удалось получить ответ от нейросети. Используем стандартный ответ.');
+                        }
+                        
+                        // Если это русский текст, отвечаем на русском
+                        if (containsCyrillic) {
+                            const russianResponses = [
+                                'Понятно!',
+                                'Интересно.',
+                                'Хорошо.',
+                                'Согласен.',
+                                'Действительно.',
+                                'Ясно.',
+                                'Принято!',
+                                'Отлично!',
+                                'Сейчас подумаю над этим.',
+                                'Спасибо за информацию!',
+                                'Точно подмечено.'
+                            ];
+                            const randomIndex = Math.floor(Math.random() * russianResponses.length);
+                            addResponseMessage(russianResponses[randomIndex]);
+                        }
+                        // Если это не русский текст, отвечаем на английском
+                        else {
+                            const responses = [
+                                'I understand.',
+                                'Interesting.',
+                                'Noted.',
+                                'I see.',
+                                'Got it.',
+                                'Okay.',
+                                'Thanks for sharing!',
+                                'Makes sense.',
+                                'Good point.',
+                                "I'll think about it."
+                            ];
+                            const randomIndex = Math.floor(Math.random() * responses.length);
+                            addResponseMessage(responses[randomIndex]);
+                        }
                     }
-                    // Если это не команда и не русский текст, отвечаем на английском
-                    else {
-                        const responses = [
-                            'I understand.',
-                            'Interesting.',
-                            'Noted.',
-                            'I see.',
-                            'Got it.',
-                            'Okay.'
-                        ];
-                        const randomIndex = Math.floor(Math.random() * responses.length);
-                        addResponseMessage(responses[randomIndex]);
+                } catch (error) {
+                    console.error('Ошибка при обработке сообщения:', error);
+                    addSystemMessage('Произошла ошибка при обработке сообщения.');
+                    
+                    // Используем стандартные ответы при ошибке
+                    if (containsCyrillic) {
+                        addResponseMessage('Извините, произошла ошибка. Можете повторить?');
+                    } else {
+                        addResponseMessage('Sorry, an error occurred. Could you repeat that?');
                     }
                 }
             } else {
