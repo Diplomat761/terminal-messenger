@@ -114,7 +114,22 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Обработка команд
     function handleCommand(command) {
+        const originalCommand = command;
         command = command.toLowerCase();
+        
+        // Определяем, является ли это командой
+        const isCommand = command.startsWith('/') || 
+                            command === 'clear' || 
+                            command === 'cls' || 
+                            command === 'help' || 
+                            command === 'time' || 
+                            command === 'date' || 
+                            command === 'ls' || 
+                            command === 'exit' || 
+                            command.startsWith('echo ');
+        
+        // Проверяем, содержит ли текст кириллицу (русский текст)
+        const containsCyrillic = /[а-яА-ЯёЁ]/.test(originalCommand);
         
         // Базовые команды терминала
         if (command === 'clear' || command === 'cls') {
@@ -133,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
             addResponseMessage(`Текущая дата: ${now.toLocaleDateString()}`);
         }
         else if (command.startsWith('echo ')) {
-            const text = command.substring(5);
+            const text = originalCommand.substring(5);
             addResponseMessage(text);
         }
         else if (command === 'ls') {
@@ -145,11 +160,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 addSystemMessage('Нажмите F5, чтобы перезапустить терминал');
             }, 1000);
         }
-        else if (command === 'привет') {
-            addResponseMessage('zsh: command not found: привет');
-        }
         else {
-            addResponseMessage(`zsh: command not found: ${command}`);
+            // Если это русский текст, отвечаем на русском
+            if (containsCyrillic) {
+                const russianResponses = [
+                    'Понятно!',
+                    'Интересно.',
+                    'Хорошо.',
+                    'Согласен.',
+                    'Действительно.',
+                    'Ясно.',
+                    'Принято!'
+                ];
+                const randomIndex = Math.floor(Math.random() * russianResponses.length);
+                addResponseMessage(russianResponses[randomIndex]);
+            }
+            // Если это не команда и не русский текст, обрабатываем как обычное сообщение на английском
+            else if (!isCommand) {
+                // Простой ответ на сообщение
+                const responses = [
+                    'I understand.',
+                    'Interesting.',
+                    'Noted.',
+                    'I see.',
+                    'Got it.',
+                    'Okay.'
+                ];
+                const randomIndex = Math.floor(Math.random() * responses.length);
+                addResponseMessage(responses[randomIndex]);
+            } else {
+                // Это неизвестная команда
+                addResponseMessage(`zsh: command not found: ${command}`);
+            }
         }
     }
     
