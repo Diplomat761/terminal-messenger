@@ -167,6 +167,29 @@ body {
 }
 
 @media (max-width: 480px) {
+    body {
+        align-items: flex-start;
+    }
+    
+    .terminal-container {
+        height: auto;
+        min-height: 300px;
+        position: relative;
+    }
+    
+    .terminal-body {
+        height: auto;
+        min-height: 250px;
+    }
+
+    .input-line {
+        position: sticky;
+        bottom: 0;
+        background-color: #000;
+        padding: 5px 0;
+        z-index: 5;
+    }
+    
     .terminal-buttons {
         gap: 5px;
     }
@@ -197,4 +220,46 @@ body {
         width: 100%;
         margin-top: 5px;
     }
+}
+
+/* Стили для устройств с виртуальной клавиатурой */
+@media (max-height: 450px) {
+    .terminal-container {
+        max-height: 85vh;
+    }
+    
+    .chat-messages {
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+    
+    .input-line {
+        position: sticky;
+        bottom: 0;
+        background-color: #000;
+        padding-bottom: 5px;
+        z-index: 10;
+    }
+}
+
+/* Стили при открытой клавиатуре */
+.keyboard-open {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 10px !important;
+    right: 10px !important;
+    width: auto !important;
+    max-height: 250px !important;
+    z-index: 1000 !important;
+}
+
+.keyboard-open .chat-messages {
+    max-height: 150px !important;
+    overflow-y: auto !important;
+}
+
+.keyboard-open .input-line {
+    background-color: #000 !important;
+    padding: 8px 0 !important;
+    border-top: 1px solid #333 !important;
 } 

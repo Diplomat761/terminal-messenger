@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatMessages = document.getElementById('chatMessages');
     const messageInput = document.getElementById('messageInput');
     const prompt = document.querySelector('.prompt');
+    const terminalContainer = document.querySelector('.terminal-container');
     
     // Добавляем начальное системное сообщение
     addSystemMessage('Добро пожаловать в Terminal Messenger. Начните общение...');
@@ -37,11 +38,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    // Обработка фокуса на поле ввода для мобильных устройств
+    messageInput.addEventListener('focus', () => {
+        if (window.innerWidth <= 480) {
+            // Прокручиваем к полю ввода при появлении клавиатуры
+            setTimeout(() => {
+                window.scrollTo(0, document.body.scrollHeight);
+                messageInput.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }, 300);
+            
+            // Добавляем класс для изменения стилей при открытой клавиатуре
+            terminalContainer.classList.add('keyboard-open');
+        }
+    });
+    
+    messageInput.addEventListener('blur', () => {
+        // Удаляем класс при закрытии клавиатуры
+        terminalContainer.classList.remove('keyboard-open');
+    });
+    
+    // Определяем изменение высоты окна (признак открытия/закрытия клавиатуры)
+    let windowHeight = window.innerHeight;
+    window.addEventListener('resize', () => {
+        // Если высота уменьшилась, вероятно, открылась клавиатура
+        if (window.innerHeight < windowHeight && window.innerWidth <= 480) {
+            terminalContainer.classList.add('keyboard-open');
+            setTimeout(() => {
+                messageInput.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }, 100);
+        } else if (window.innerHeight > windowHeight) {
+            // Если высота увеличилась, вероятно, клавиатура закрылась
+            terminalContainer.classList.remove('keyboard-open');
+        }
+        windowHeight = window.innerHeight;
+        
+        // Также обновляем промпт при изменении размера
+        adjustPromptForMobile();
+    });
+    
     // Вызываем при загрузке
     adjustPromptForMobile();
-    
-    // Слушаем изменение размера окна
-    window.addEventListener('resize', adjustPromptForMobile);
     
     // Функция добавления сообщения пользователя
     function addUserMessage(text) {
@@ -120,13 +156,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Прокрутка чата вниз
     function scrollToBottom() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
+        // Для мобильных устройств также прокручиваем страницу
+        if (window.innerWidth <= 480) {
+            messageInput.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
     }
     
     // Фокус на поле ввода
     messageInput.focus();
     
     // Сохраняем фокус на поле ввода при клике в любом месте терминала
-    document.querySelector('.terminal-container').addEventListener('click', () => {
+    terminalContainer.addEventListener('click', () => {
         messageInput.focus();
     });
 }); 
