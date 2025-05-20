@@ -3,6 +3,58 @@ document.addEventListener('DOMContentLoaded', () => {
     const messageInput = document.getElementById('messageInput');
     const prompt = document.querySelector('.prompt');
     const terminalContainer = document.querySelector('.terminal-container');
+    const settingsButton = document.getElementById('settingsButton');
+    const settingsModal = document.getElementById('settingsModal');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const useAiSwitch = document.getElementById('useAiSwitch');
+    const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+    const cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
+    
+    // Конфигурация API (загружаем из localStorage, если есть)
+    let OPENAI_API_KEY = localStorage.getItem('openai_api_key') || '';
+    let USE_AI = localStorage.getItem('use_ai') === 'true' || false;
+    
+    // Устанавливаем начальные значения в форме настроек
+    apiKeyInput.value = OPENAI_API_KEY;
+    useAiSwitch.checked = USE_AI;
+    
+    // Обработка кнопки настроек
+    settingsButton.addEventListener('click', () => {
+        settingsModal.style.display = 'flex';
+    });
+    
+    // Сохранение настроек
+    saveSettingsBtn.addEventListener('click', () => {
+        OPENAI_API_KEY = apiKeyInput.value.trim();
+        USE_AI = useAiSwitch.checked;
+        
+        // Сохраняем в localStorage
+        localStorage.setItem('openai_api_key', OPENAI_API_KEY);
+        localStorage.setItem('use_ai', USE_AI.toString());
+        
+        // Закрываем модальное окно
+        settingsModal.style.display = 'none';
+        
+        // Показываем сообщение об успешном сохранении настроек
+        addSystemMessage('Настройки сохранены. ' + (USE_AI ? 'Нейросеть включена.' : 'Нейросеть отключена.'));
+    });
+    
+    // Отмена настроек
+    cancelSettingsBtn.addEventListener('click', () => {
+        // Восстанавливаем предыдущие значения
+        apiKeyInput.value = OPENAI_API_KEY;
+        useAiSwitch.checked = USE_AI;
+        
+        // Закрываем модальное окно
+        settingsModal.style.display = 'none';
+    });
+    
+    // Закрытие модального окна при клике вне его
+    settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) {
+            settingsModal.style.display = 'none';
+        }
+    });
     
     // Добавляем начальное системное сообщение
     addSystemMessage('Добро пожаловать в Terminal Messenger. Начните общение...');
@@ -112,8 +164,67 @@ document.addEventListener('DOMContentLoaded', () => {
         scrollToBottom();
     }
     
+    // Функция для вызова OpenAI API
+    async function generateAIResponse(prompt) {
+        if (!OPENAI_API_KEY || !USE_AI) {
+            // Если ключ API не задан или AI отключен, используем стандартные ответы
+            return null;
+        }
+        
+        // Показываем индикатор загрузки
+        const loadingElement = document.createElement('div');
+        loadingElement.classList.add('message', 'message-system');
+        loadingElement.textContent = 'Генерация ответа...';
+        chatMessages.appendChild(loadingElement);
+        scrollToBottom();
+        
+        try {
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${OPENAI_API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: 'gpt-3.5-turbo',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: 'Ты помощник в терминальном чате. Давай короткие ответы на русском языке. Максимум 1-2 предложения.'
+                        },
+                        {
+                            role: 'user',
+                            content: prompt
+                        }
+                    ],
+                    max_tokens: 100,
+                    temperature: 0.7
+                })
+            });
+            
+            const data = await response.json();
+            
+            // Удаляем индикатор загрузки
+            chatMessages.removeChild(loadingElement);
+            
+            if (data.choices && data.choices.length > 0) {
+                return data.choices[0].message.content.trim();
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Ошибка при запросе к API:', error);
+            
+            // Удаляем индикатор загрузки
+            chatMessages.removeChild(loadingElement);
+            
+            addSystemMessage('Ошибка при генерации ответа.');
+            return null;
+        }
+    }
+    
     // Обработка команд
-    function handleCommand(command) {
+    async function handleCommand(command) {
         const originalCommand = command;
         command = command.toLowerCase();
         
@@ -137,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
             addSystemMessage('Окно терминала очищено');
         } 
         else if (command === 'help') {
-            addResponseMessage('Доступные команды:\n- clear: очистить экран\n- time: показать текущее время\n- date: показать текущую дату\n- echo [текст]: вывести текст\n- ls: список файлов\n- exit: выход');
+            addResponseMessage('Доступные команды:\n- clear: очистить экран\n- time: показать текущее время\n- date: показать текущую дату\n- echo [текст]: вывести текст\n- ls: список файлов\n- settings: настройки нейросети\n- exit: выход');
         }
         else if (command === 'time') {
             const now = new Date();
@@ -160,34 +271,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 addSystemMessage('Нажмите F5, чтобы перезапустить терминал');
             }, 1000);
         }
+        else if (command === 'settings' || command === 'config') {
+            // Открываем настройки при вводе команды settings
+            settingsModal.style.display = 'flex';
+        }
         else {
-            // Если это русский текст, отвечаем на русском
-            if (containsCyrillic) {
-                const russianResponses = [
-                    'Понятно!',
-                    'Интересно.',
-                    'Хорошо.',
-                    'Согласен.',
-                    'Действительно.',
-                    'Ясно.',
-                    'Принято!'
-                ];
-                const randomIndex = Math.floor(Math.random() * russianResponses.length);
-                addResponseMessage(russianResponses[randomIndex]);
-            }
-            // Если это не команда и не русский текст, обрабатываем как обычное сообщение на английском
-            else if (!isCommand) {
-                // Простой ответ на сообщение
-                const responses = [
-                    'I understand.',
-                    'Interesting.',
-                    'Noted.',
-                    'I see.',
-                    'Got it.',
-                    'Okay.'
-                ];
-                const randomIndex = Math.floor(Math.random() * responses.length);
-                addResponseMessage(responses[randomIndex]);
+            // Используем AI для генерации ответов на сообщения
+            if (!isCommand) {
+                // Пытаемся получить ответ от AI
+                const aiResponse = await generateAIResponse(originalCommand);
+                
+                if (aiResponse) {
+                    // Если получили ответ от AI, используем его
+                    addResponseMessage(aiResponse);
+                } else {
+                    // Если ответа от AI нет, используем стандартные ответы
+                    // Если это русский текст, отвечаем на русском
+                    if (containsCyrillic) {
+                        const russianResponses = [
+                            'Понятно!',
+                            'Интересно.',
+                            'Хорошо.',
+                            'Согласен.',
+                            'Действительно.',
+                            'Ясно.',
+                            'Принято!'
+                        ];
+                        const randomIndex = Math.floor(Math.random() * russianResponses.length);
+                        addResponseMessage(russianResponses[randomIndex]);
+                    }
+                    // Если это не команда и не русский текст, отвечаем на английском
+                    else {
+                        const responses = [
+                            'I understand.',
+                            'Interesting.',
+                            'Noted.',
+                            'I see.',
+                            'Got it.',
+                            'Okay.'
+                        ];
+                        const randomIndex = Math.floor(Math.random() * responses.length);
+                        addResponseMessage(responses[randomIndex]);
+                    }
+                }
             } else {
                 // Это неизвестная команда
                 addResponseMessage(`zsh: command not found: ${command}`);

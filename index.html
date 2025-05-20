@@ -15,6 +15,7 @@
                 <div class="button maximize"></div>
             </div>
             <div class="terminal-title">alexeypereverzev — -zsh — 70×24</div>
+            <div class="settings-button" id="settingsButton">⚙️</div>
         </div>
         <div class="terminal-body">
             <div class="chat-messages" id="chatMessages"></div>
@@ -24,6 +25,26 @@
             </div>
         </div>
     </div>
+    
+    <!-- Модальное окно настроек -->
+    <div class="settings-modal" id="settingsModal">
+        <div class="settings-content">
+            <h3>Настройки</h3>
+            <div class="settings-row">
+                <label for="apiKeyInput">OpenAI API ключ:</label>
+                <input type="password" id="apiKeyInput" placeholder="Введите ваш API ключ">
+            </div>
+            <div class="settings-row">
+                <label for="useAiSwitch">Использовать нейросеть:</label>
+                <input type="checkbox" id="useAiSwitch">
+            </div>
+            <div class="settings-buttons">
+                <button id="saveSettingsBtn">Сохранить</button>
+                <button id="cancelSettingsBtn">Отмена</button>
+            </div>
+        </div>
+    </div>
+    
     <script src="script.js"></script>
 </body>
 </html> 
